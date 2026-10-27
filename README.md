@@ -215,5 +215,7 @@ go mod edit -replace=github.com/plutoframework/pluto-rbac=../pluto-rbac
 go mod tidy
 ```
 
-This repository is the standalone library. Wiring it into the current example
-and generator is a separate integration step after reviewing these primitives.
+The [Pluto CLI](https://github.com/plutoframework/cli) and its generated apps, plus
+the [purchasing example](https://github.com/plutoframework/pluto-example), import
+this library at an explicit pinned version. Their authenticators resolve trusted
+role assignments; each application compiles and injects its own role catalog.
