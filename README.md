@@ -204,9 +204,9 @@ copies; every mutant must be killed, with build failures and timeouts reported
 separately. It is a bounded smoke check, not comprehensive mutation coverage.
 Benchmarks report actual allocations/timing; no blanket performance claim is made.
 
-Import `github.com/plutoframework/pluto-rbac` and install the current development
-version with `go get github.com/plutoframework/pluto-rbac@latest`. No release is
-tagged yet. To work against a sibling local checkout instead, add an explicit
+Import `github.com/plutoframework/pluto-rbac` and install the initial release
+with `go get github.com/plutoframework/pluto-rbac@v0.1.0`. Releases before v1
+may change their API. To work against a sibling local checkout, add an explicit
 replacement in the consuming app (or use a local Go workspace):
 
 ```sh
