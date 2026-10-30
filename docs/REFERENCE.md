@@ -24,24 +24,24 @@ const ReadReports rbac.PermissionID = "reports:read"
 const Analyst rbac.RoleID = "analyst"
 
 policy, err := rbac.New(rbac.Definition{
-    Permissions: []rbac.Permission{
-        {
-            ID:          ReadReports,
-            Name:        "Read reports",
-            Description: "Read reports allowed by resource policy.",
-        },
-    },
-    Roles: []rbac.Role{
-        {
-            ID:          Analyst,
-            Name:        "Analyst",
-            Description: "Inspect reports in the active scope.",
-            Permissions: []rbac.PermissionID{ReadReports},
-        },
-    },
+	Permissions: []rbac.Permission{
+		{
+			ID:          ReadReports,
+			Name:        "Read reports",
+			Description: "Read reports allowed by resource policy.",
+		},
+	},
+	Roles: []rbac.Role{
+		{
+			ID:          Analyst,
+			Name:        "Analyst",
+			Description: "Inspect reports in the active scope.",
+			Permissions: []rbac.PermissionID{ReadReports},
+		},
+	},
 })
 if err != nil {
-    return err
+	return err
 }
 
 allowed := policy.Allows([]rbac.RoleID{Analyst}, ReadReports)
@@ -80,32 +80,32 @@ explicitly enabled and requires a tenant on every request:
 
 ```go
 resolver, err := rbac.NewStaticResolver([]rbac.Assignment{
-    {
-        SubjectID: "alice",
-        Scope:     rbac.Scope{TenantID: "northstar"},
-        Roles:     []rbac.RoleID{Analyst},
-    },
+	{
+		SubjectID: "alice",
+		Scope:     rbac.Scope{TenantID: "northstar"},
+		Roles:     []rbac.RoleID{Analyst},
+	},
 })
 if err != nil {
-    return err
+	return err
 }
 
 authorizer, err := rbac.NewAuthorizer(
-    policy,
-    resolver,
-    rbac.Options{RequireTenant: true},
+	policy,
+	resolver,
+	rbac.Options{RequireTenant: true},
 )
 if err != nil {
-    return err
+	return err
 }
 
 err = authorizer.Authorize(ctx, rbac.Request{
-    SubjectID:  authenticatedActorID,
-    Scope:      rbac.Scope{TenantID: verifiedTenantID},
-    Permission: ReadReports,
+	SubjectID:  authenticatedActorID,
+	Scope:      rbac.Scope{TenantID: verifiedTenantID},
+	Permission: ReadReports,
 })
 if err != nil {
-    return err
+	return err
 }
 ```
 
@@ -126,7 +126,7 @@ For database-backed membership, implement the consumer-sized interface:
 
 ```go
 type RoleResolver interface {
-    Roles(context.Context, string, rbac.Scope) ([]rbac.RoleID, error)
+	Roles(context.Context, string, rbac.Scope) ([]rbac.RoleID, error)
 }
 ```
 
