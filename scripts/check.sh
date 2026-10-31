@@ -1,23 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 cd "$(dirname "$0")/.."
+go run ./scripts/commentspacing -formatter "$PWD/scripts/golangci.sh" .
 
-format_diff=$(mktemp)
-trap 'rm -f "$format_diff"' EXIT
-if ! ./scripts/golangci.sh fmt --diff ./... > "$format_diff"; then
-  cat "$format_diff"
-  rm -f "$format_diff"
-  echo "Formatter failed; run make fmt and resolve any errors" >&2
-  exit 1
-fi
-if [[ -s "$format_diff" ]]; then
-  cat "$format_diff"
-  rm -f "$format_diff"
-  echo "Formatting differs; run make fmt" >&2
-  exit 1
-fi
-rm -f "$format_diff"
-./scripts/golangci.sh run ./...
+./scripts/lint.sh ./...
 python3 - <<'PYTHON'
 from pathlib import Path
 
