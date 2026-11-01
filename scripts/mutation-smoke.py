@@ -14,6 +14,13 @@ import tempfile
 ROOT = Path(__file__).resolve().parent.parent
 MUTATIONS = [
     (
+        "original execution cancellation ignored",
+        "execution.go",
+        "context.AfterFunc(state.context, cancel)",
+        "context.AfterFunc(context.Background(), cancel)",
+        "TestExecutionOriginalCancellationReachesActiveUse",
+    ),
+    (
         "resource policy bypass through permission gate",
         "resource.go",
         (

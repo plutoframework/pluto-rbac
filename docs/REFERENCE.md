@@ -250,7 +250,10 @@ configuration, not unbounded request payloads.
 
 ## Development and verification
 
-Tests use only Go and the standard library. The optional developer formatter is
+Root runtime and tests use only Go and the standard library. The optional
+identity integration pins an exact unreleased Auth commit; full repository checks
+fetch it through Go modules and require no sibling checkout. Its replacement for
+the RBAC root resolves within this repository. The developer formatter is
 pinned in mise.toml; scripts accept that installed version or invoke it via
 mise.
 Review before `mise trust` and `mise install` . Python 3.11+ is needed by
@@ -274,7 +277,7 @@ tenant/subject isolation, errors, cancellation, role changes, concurrent reads
 and
 executable examples. Fuzzing compares compilation to an independent traversal
 oracle and checks that privileged assignments never cross tenant scopes. The
-mutation smoke alters eleven relevant guards/ownership properties in disposable
+mutation smoke alters twelve relevant guards/ownership properties in disposable
 copies; every mutant must be killed, with build failures and timeouts reported
 separately. It is a bounded smoke check, not comprehensive mutation coverage.
 Benchmarks report actual allocations/timing; no blanket performance claim is
@@ -299,6 +302,9 @@ this library at an explicit pinned version. Their authenticators resolve trusted
 role assignments; each application compiles and injects its own role catalog.
 
 ## Required resource and identity gates (unreleased candidate)
+
+The matching product guide is updated in the
+[site companion PR #5](https://github.com/plutoframework/pluto-site/pull/5).
 
 `Requirement.WithResourcePolicy(policy)` returns a `ResourceRequirement` whose
 `Within` and `Use` methods require the current application-owned resource policy
@@ -325,11 +331,16 @@ No public actor/tenant string constructor mints this execution. Foreign issuing
 managers, changed memberships, revoked sessions/roles, wrong bindings, expired
 callback scopes and zero values deny. Execution getters expose binding facts,
 not reusable authority. Credentials must come from the real session flow; worker
-or tool payload identities are untrusted. The integration module is a local
-candidate with explicit replacements, not a published pin. Auth and RBAC roots
-remain standard-library-only; generated-release adoption is a separate
-obligation.
+or tool payload identities are untrusted. The integration module pins candidate
+Auth source, not a published release.
+Auth and RBAC roots remain standard-library-only; generated-release adoption
+is a separate obligation.
 
 Run optional-module tests with `cd identity && GOWORK=off go test -race ./...`.
-`make fmt`, `make vet` and `make check` include the optional module. Local Auth
-and RBAC checkouts are required for its candidate replacements.
+`make fmt`, `make vet` and `make check` include the optional module. Auth is
+fetched at the exact candidate commit in `identity/go.mod`; no sibling Auth
+checkout is required.
+
+Active uses propagate cancellation from both the issuing scope and the supplied
+use context through revalidation and callbacks. Dependencies and callbacks must
+honor cancellation; already completed effects are not rolled back.

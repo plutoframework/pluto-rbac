@@ -6,9 +6,9 @@ import (
 )
 
 // Execution is a callback-lifetime permission capability. Its zero value
-// denies.
-// Copies share lifetime state: retaining or copying it cannot extend the grant.
-// It does not verify identity, resource ownership or transaction consistency.
+// denies. Copies share lifetime state: retaining or copying it cannot extend
+// the grant. It does not verify identity, resource ownership or transaction
+// consistency.
 type Execution struct {
 	state *executionState
 }
@@ -26,13 +26,11 @@ type executionState struct {
 }
 
 // Within resolves permission before supplying a capability to run. resourceID
-// is
-// an exact nonempty application binding, not a resource-ownership check.
-// Callers
-// must obtain subject and scope from trusted wiring and choose the resource
-// key.
-// The capability stops admitting uses when run returns or panics; Within waits
-// for admitted Use callbacks before returning or propagating that panic.
+// is an exact nonempty application binding, not a resource-ownership check.
+// Callers must obtain subject and scope from trusted wiring and choose the
+// resource key. The capability stops admitting uses when run returns or panics;
+// Within waits for admitted Use callbacks before returning or propagating that
+// panic.
 func (r *Requirement) Within(
 	ctx context.Context,
 	subjectID string,
@@ -84,10 +82,10 @@ func (s *executionState) finish() {
 }
 
 // Use validates the exact live requirement, subject, scope and resource
-// binding,
-// resolves roles again, then invokes run. A restricted adapter must expose this
-// guarded invocation rather than a separate check followed by an exposed write.
-// Nested synchronous Use calls are supported. A nil callback is invalid.
+// binding, resolves roles again, then invokes run. A restricted adapter must
+// expose this guarded invocation rather than a separate check followed by an
+// exposed write. Nested synchronous Use calls are supported. A nil callback is
+// invalid.
 //
 // The original context must remain uncanceled even when a different context is
 // supplied. Use cannot prove that run's resource query matches the binding or
@@ -128,6 +126,13 @@ func (r *Requirement) Use(
 
 	state.mutex.Unlock()
 	defer state.finish()
+
+	// Keep values from the use context and cancellation from both scopes.
+	ctx, cancel := context.WithCancel(ctx)
+
+	stop := context.AfterFunc(state.context, cancel)
+	defer cancel()
+	defer stop()
 
 	if err := state.context.Err(); err != nil {
 		return err
