@@ -80,7 +80,11 @@ func setup(t *testing.T) *fixture {
 	authorizer, err := rbac.NewAuthorizer(
 		policy,
 		rbac.RoleResolverFunc(
-			func(_ context.Context, subject string, scope rbac.Scope) ([]rbac.RoleID, error) {
+			func(
+				_ context.Context,
+				subject string,
+				scope rbac.Scope,
+			) ([]rbac.RoleID, error) {
 				if subject != "alice" || scope.TenantID != "north" {
 					return nil, nil
 				}
@@ -158,7 +162,10 @@ func TestCurrentIdentityMembershipPermissionAndResource(t *testing.T) {
 				identity,
 				"north",
 				"one",
-				func(ctx context.Context, execution *identitygate.Execution) error {
+				func(
+					ctx context.Context,
+					execution *identitygate.Execution,
+				) error {
 					escaped = execution
 					if execution.SubjectID() != "alice" ||
 						execution.TenantID() != "north" ||
@@ -176,7 +183,16 @@ func TestCurrentIdentityMembershipPermissionAndResource(t *testing.T) {
 						t.Fatal(err)
 					}
 
-					for _, binding := range [][2]string{{"south", "one"}, {"north", "two"}} {
+					for _, binding := range [][2]string{
+						{
+							"south",
+							"one",
+						},
+						{
+							"north",
+							"two",
+						},
+					} {
 						if err := f.gate.Use(
 							ctx,
 							execution,
@@ -195,7 +211,11 @@ func TestCurrentIdentityMembershipPermissionAndResource(t *testing.T) {
 						}
 					}
 
-					for _, disable := range []func(){func() { f.membership = false }, func() { f.roles = nil }, func() { f.resource = false }} {
+					for _, disable := range []func(){
+						func() { f.membership = false },
+						func() { f.roles = nil },
+						func() { f.resource = false },
+					} {
 						disable()
 
 						if err := f.gate.Use(
@@ -345,10 +365,14 @@ func TestOriginalCancellationDuringResourcePolicy(t *testing.T) {
 					identity,
 					"north",
 					"one",
-					func(ctx context.Context, execution *identitygate.Execution) error {
+					func(
+						ctx context.Context,
+						execution *identitygate.Execution,
+					) error {
 						if !duringUse {
 							t.Fatal(
-								"cancellation during entry policy reached operation",
+								"cancellation during entry policy " +
+									"reached operation",
 							)
 						}
 
@@ -361,7 +385,8 @@ func TestOriginalCancellationDuringResourcePolicy(t *testing.T) {
 							"one",
 							func(context.Context) error {
 								t.Fatal(
-									"cancellation during use policy reached write",
+									"cancellation during use " +
+										"policy reached write",
 								)
 
 								return nil
@@ -413,7 +438,11 @@ func (channelMembership) VerifyMembership(
 func TestNilMembershipDependenciesDeny(t *testing.T) {
 	f := setup(t)
 	for _, membership := range []identitygate.MembershipVerifier{
-		nil, mapMembership(nil), sliceMembership(nil), channelMembership(nil), identitygate.MembershipVerifierFunc(nil),
+		nil,
+		mapMembership(nil),
+		sliceMembership(nil),
+		channelMembership(nil),
+		identitygate.MembershipVerifierFunc(nil),
 	} {
 		if gate, err := identitygate.New(
 			f.manager,
@@ -444,7 +473,10 @@ func TestNilMembershipDependenciesDeny(t *testing.T) {
 					identity,
 					"north",
 					"one",
-					func(context.Context, *identitygate.Execution) error { calls++; return nil },
+					func(context.Context, *identitygate.Execution) error {
+						calls++
+						return nil
+					},
 				)
 			},
 		)

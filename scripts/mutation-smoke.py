@@ -1,17 +1,25 @@
 #!/usr/bin/env python3
-"""Bounded policy mutations in disposable copies; no comprehensive coverage claim."""
+(
+    (
+        "Bounded policy mutations in disposable copies; "
+        "no comprehensive coverage claim."
+    )
+)
+
 from pathlib import Path
 import shutil
 import subprocess
 import tempfile
-
 
 ROOT = Path(__file__).resolve().parent.parent
 MUTATIONS = [
     (
         "resource policy bypass through permission gate",
         "resource.go",
-        "private := &Requirement{authorizer: r.authorizer, permission: r.permission}",
+        (
+            "private := &Requirement{authorizer: "
+            "r.authorizer, permission: r.permission}"
+        ),
         "private := r",
         "TestRequiredResourcePolicy",
     ),
@@ -54,7 +62,10 @@ MUTATIONS = [
         "permission grant ignored",
         "policy.go",
         "if _, granted := p.grants[role][permission]; granted {",
-        "if _, granted := p.grants[role][permission]; granted || len(roles) > 0 {",
+        (
+            "if _, granted := p.grants[role][permission]; "
+            "granted || len(roles) > 0 {"
+        ),
         "TestPolicyDecisions",
     ),
     (
@@ -74,8 +85,14 @@ MUTATIONS = [
     (
         "resolver error ignored",
         "authorizer.go",
-        'if err != nil {\n\t\treturn fmt.Errorf("%w: %w", ErrResolveRoles, err)',
-        'if false && err != nil {\n\t\treturn fmt.Errorf("%w: %w", ErrResolveRoles, err)',
+        (
+            'if err != nil {\n\t\treturn fmt.Errorf("%w: %w", '
+            "ErrResolveRoles, err)"
+        ),
+        (
+            "if false && err != nil {\n\t\treturn "
+            'fmt.Errorf("%w: %w", ErrResolveRoles, err)'
+        ),
         "TestResolverFailures",
     ),
     (
@@ -90,7 +107,11 @@ MUTATIONS = [
 
 def execute(args, cwd, timeout):
     return subprocess.run(
-        args, cwd=cwd, capture_output=True, text=True, timeout=timeout,
+        args,
+        cwd=cwd,
+        capture_output=True,
+        text=True,
+        timeout=timeout,
     )
 
 
@@ -101,11 +122,16 @@ def main():
 
     counts = dict.fromkeys(["killed", "survived", "invalid", "timed-out"], 0)
     for name, filename, before, after, test in MUTATIONS:
-        with tempfile.TemporaryDirectory(prefix="pluto-rbac-mutation-") as temporary:
+        with tempfile.TemporaryDirectory(
+            prefix="pluto-rbac-mutation-"
+        ) as temporary:
             checkout = Path(temporary) / "library"
             shutil.copytree(
-                ROOT, checkout,
-                ignore=shutil.ignore_patterns(".git", "bin", "*.test", "coverage.*"),
+                ROOT,
+                checkout,
+                ignore=shutil.ignore_patterns(
+                    ".git", "bin", "*.test", "coverage.*"
+                ),
             )
             path = checkout / filename
             content = path.read_text()
@@ -116,15 +142,24 @@ def main():
             try:
                 binary = Path(temporary) / "mutant.test"
                 built = execute(
-                    ["go", "test", "-c", "-o", str(binary), "."], checkout, 60,
+                    ["go", "test", "-c", "-o", str(binary), "."],
+                    checkout,
+                    60,
                 )
                 if built.returncode:
                     outcome = "invalid"
                     output = built.stdout + built.stderr
                 else:
                     run = execute(
-                        [str(binary), "-test.run", f"^{test}$", "-test.timeout", "15s"],
-                        checkout, 20,
+                        [
+                            str(binary),
+                            "-test.run",
+                            f"^{test}$",
+                            "-test.timeout",
+                            "15s",
+                        ],
+                        checkout,
+                        20,
                     )
                     output = run.stdout + run.stderr
                     if "test timed out" in output:

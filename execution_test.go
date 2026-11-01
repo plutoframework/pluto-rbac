@@ -10,7 +10,9 @@ import (
 
 func TestExecutionBindingsAndLifetime(t *testing.T) {
 	resolver := rbac.RoleResolverFunc(
-		func(context.Context, string, rbac.Scope) ([]rbac.RoleID, error) { return []rbac.RoleID{admin}, nil },
+		func(context.Context, string, rbac.Scope) ([]rbac.RoleID, error) {
+			return []rbac.RoleID{admin}, nil
+		},
 	)
 	authorizer := newAuthorizer(t, resolver, true)
 
@@ -50,12 +52,56 @@ func TestExecutionBindingsAndLifetime(t *testing.T) {
 			}{
 				{required, execution, "alice", scope, "purchase:1", nil},
 				{required, &copied, "alice", scope, "purchase:1", nil},
-				{other, execution, "alice", scope, "purchase:1", rbac.ErrForbidden},
-				{required, execution, "bob", scope, "purchase:1", rbac.ErrForbidden},
-				{required, execution, "alice", rbac.Scope{TenantID: "south"}, "purchase:1", rbac.ErrForbidden},
-				{required, execution, "alice", scope, "purchase:2", rbac.ErrForbidden},
-				{required, &rbac.Execution{}, "alice", scope, "purchase:1", rbac.ErrForbidden},
-				{required, nil, "alice", scope, "purchase:1", rbac.ErrForbidden},
+				{
+					other,
+					execution,
+					"alice",
+					scope,
+					"purchase:1",
+					rbac.ErrForbidden,
+				},
+				{
+					required,
+					execution,
+					"bob",
+					scope,
+					"purchase:1",
+					rbac.ErrForbidden,
+				},
+				{
+					required,
+					execution,
+					"alice",
+					rbac.Scope{
+						TenantID: "south",
+					},
+					"purchase:1",
+					rbac.ErrForbidden,
+				},
+				{
+					required,
+					execution,
+					"alice",
+					scope,
+					"purchase:2",
+					rbac.ErrForbidden,
+				},
+				{
+					required,
+					&rbac.Execution{},
+					"alice",
+					scope,
+					"purchase:1",
+					rbac.ErrForbidden,
+				},
+				{
+					required,
+					nil,
+					"alice",
+					scope,
+					"purchase:1",
+					rbac.ErrForbidden,
+				},
 			} {
 				if err := test.gate.Use(
 					ctx,
@@ -100,7 +146,10 @@ func TestExecutionRevalidatesAndCancels(t *testing.T) {
 	roles := []rbac.RoleID{admin}
 	calls := 0
 	resolver := rbac.RoleResolverFunc(
-		func(context.Context, string, rbac.Scope) ([]rbac.RoleID, error) { calls++; return roles, nil },
+		func(context.Context, string, rbac.Scope) ([]rbac.RoleID, error) {
+			calls++
+			return roles, nil
+		},
 	)
 
 	required, err := newAuthorizer(t, resolver, false).Require(manage)
@@ -172,7 +221,9 @@ func TestExecutionRevalidatesAndCancels(t *testing.T) {
 
 func TestExecutionInvalidAndPanic(t *testing.T) {
 	resolver := rbac.RoleResolverFunc(
-		func(context.Context, string, rbac.Scope) ([]rbac.RoleID, error) { return []rbac.RoleID{admin}, nil },
+		func(context.Context, string, rbac.Scope) ([]rbac.RoleID, error) {
+			return []rbac.RoleID{admin}, nil
+		},
 	)
 
 	required, err := newAuthorizer(t, resolver, false).Require(manage)

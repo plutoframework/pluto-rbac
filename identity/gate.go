@@ -35,7 +35,8 @@ type Gate struct {
 }
 
 // Execution has no public constructor. Actor and selected tenant come from the
-// issuer's session verification plus the configured current membership verifier.
+// issuer's session verification plus the configured current membership
+// verifier.
 // It retains no bearer credential and cannot escape either callback lifetime.
 type Execution struct {
 	gate       *Gate
@@ -123,9 +124,12 @@ func (g *Gate) Within(
 	)
 }
 
-// Use verifies the exact gate/binding, live issuing session, current membership,
-// current permission and current resource policy before invoking a data callback.
-// The target binding must come from the scoped record/query or evaluated change.
+// Use verifies the exact gate/binding, live issuing session, current
+// membership,
+// current permission and current resource policy before invoking a data
+// callback.
+// The target binding must come from the scoped record/query or evaluated
+// change.
 // None of these checks establish transaction atomicity with mutable auth facts.
 func (g *Gate) Use(
 	ctx context.Context,
@@ -184,8 +188,10 @@ func (g *Gate) Use(
 	)
 }
 
-// SubjectID, TenantID and ResourceID expose binding facts, never reusable proof.
-// Passing their strings to a different API does not verify that API's authority.
+// SubjectID, TenantID and ResourceID expose binding facts, never reusable
+// proof.
+// Passing their strings to a different API does not verify that API's
+// authority.
 func (e *Execution) SubjectID() string {
 	if e == nil {
 		return ""
@@ -211,7 +217,8 @@ func (e *Execution) ResourceID() string {
 }
 
 // Policy evaluation may perform I/O. Recheck the original identity after those
-// callbacks, including its original context even if the caller supplied another.
+// callbacks, including its original context even if the caller supplied
+// another.
 func (g *Gate) withCurrentIdentity(
 	ctx context.Context,
 	identity *auth.Identity,

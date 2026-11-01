@@ -71,7 +71,9 @@ func (o *gatedPurchaseOperation) execute(
 func TestRestrictedWriteConsumer(t *testing.T) {
 	roles := []rbac.RoleID{admin}
 	resolver := rbac.RoleResolverFunc(
-		func(context.Context, string, rbac.Scope) ([]rbac.RoleID, error) { return roles, nil },
+		func(context.Context, string, rbac.Scope) ([]rbac.RoleID, error) {
+			return roles, nil
+		},
 	)
 
 	requirement, err := newAuthorizer(t, resolver, true).Require(manage)

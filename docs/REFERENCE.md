@@ -5,7 +5,8 @@ Define named roles and capabilities once, compile an immutable policy, and check
 trusted role assignments directly or resolve them for an authenticated subject.
 
 This is an initial standalone implementation for Pluto, using the module
-`github.com/plutoframework/pluto-rbac`. Go 1.25.5+ is required. Build and try the application example locally:
+`github.com/plutoframework/pluto-rbac` . Go 1.25.5+ is required. Build and try
+the application example locally:
 
 ```sh
 go test ./...
@@ -47,18 +48,22 @@ if err != nil {
 allowed := policy.Allows([]rbac.RoleID{Analyst}, ReadReports)
 ```
 
-Call `Allows` only with trusted role IDs, such as roles from a verified principal
+Call `Allows` only with trusted role IDs, such as roles from a verified
+principal
 or a server-side membership lookup. The function evaluates grants; it cannot
 authenticate a user or prove that a role belongs to them.
 
 Multiple assigned roles contribute a union of permissions. `Role.Inherits`
 names other roles whose permissions are included, transitively. An administrator
-has exactly its declared/inherited permissions: its name grants no special power.
+has exactly its declared/inherited permissions: its name grants no special
+power.
 Duplicate IDs/grants/parents, unknown grants/parents and inheritance cycles fail
-construction with `ErrInvalidPolicy`. Empty catalogs and grantless roles are valid
+construction with `ErrInvalidPolicy` . Empty catalogs and grantless roles are
+valid
 and grant nothing. There are no wildcards, pattern matching or explicit deny
 rules. IDs use lowercase letters/digits with single `.`, `_`, `:` or `-`
-separators; they start with a letter and end with a letter or digit. Display text
+separators; they start with a letter and end with a letter or digit. Display
+text
 must be nonempty, trimmed valid UTF-8 without control characters.
 
 An unknown permission denies. **Any unknown assigned role invalidates the whole
@@ -113,7 +118,8 @@ Subject IDs come from authentication; tenant selection must be verified against
 membership by the application/resolver. Supplying a nonempty ID does not verify
 an identity. Never bind these fields directly from an arbitrary identity/role
 header or JSON body. Subject and tenant strings are opaque, exact, nonempty
-trimmed UTF-8 without control characters. A tenant is absent only in single mode.
+trimmed UTF-8 without control characters. A tenant is absent only in single
+mode.
 
 The static resolver indexes the exact `(subject, scope)` pair. Missing subjects
 or tenants yield no roles, never a global or other-tenant fallback. Duplicate
@@ -139,9 +145,11 @@ library has no storage driver, ORM, HTTP dependency or global assignment store.
 Resolver errors deny even if roles were also returned. Underlying errors remain
 available through `errors.Is`/`errors.As` and `ErrResolveRoles`; map them to an
 appropriate generic response at the HTTP boundary rather than exposing database
-errors. Missing identity returns `ErrUnauthenticated`, wrong/missing scope returns
+errors. Missing identity returns `ErrUnauthenticated` , wrong/missing scope
+returns
 `ErrInvalidRequest`, and insufficient/unknown roles or permissions return
-`ErrForbidden`. Unknown permissions and invalid requests never call the resolver.
+`ErrForbidden` . Unknown permissions and invalid requests never call the
+resolver.
 Nil or zero authorizers deny with `ErrUnconfigured`. Cancellation is checked
 before and after resolution, and preserves the context error.
 
@@ -175,7 +183,8 @@ Generated required boundaries and restricted data ports remain future work.
 opaque `*Execution` to `func(context.Context, *Execution) error`. A restricted
 consumer-owned write port requires that execution in its method signature. Its
 adapter uses the same composition-injected requirement to call
-`Requirement.Use(ctx, execution, subjectID, scope, resourceID, callback)`, placing
+`Requirement.Use(ctx, execution, subjectID, scope, resourceID, callback)` ,
+placing
 the actual write inside `func(context.Context) error`.
 
 `Use` validates the exact requirement instance, subject, scope and resource key,
@@ -187,14 +196,16 @@ of the original execution cannot be erased by supplying another context.
 Copies of an execution share lifetime state. When the outer callback returns or
 panics, new uses are denied and `Within` waits for admitted use callbacks to
 finish before it returns or propagates the panic. Nested synchronous uses are
-supported. Callbacks must terminate; waiting for the enclosing `Within` to return
+supported. Callbacks must terminate; waiting for the enclosing `Within` to
+return
 from inside an active use would create an application dependency cycle.
 
 This combines permission validation and guarded invocation; a successful prior
 check is not accepted as write authority. It still cannot prove that callback
 SQL/resource predicates match the declared key, authenticate a supplied subject,
 or make revocation atomic with the write. Admitted callbacks may finish while
-the scope closes. Arbitrary independent SQL, exposed mutations, reflection/unsafe
+the scope closes. Arbitrary independent SQL, exposed mutations,
+reflection/unsafe
 and source modifications are outside this contract. Generated operation and
 restricted port adoption plus independently enforced checks are required for a
 mandatory application boundary. This candidate API is not in published v0.1.0.
@@ -208,24 +219,31 @@ separate checks for those conditions. A feature flag can disable a capability;
 enabling it does not grant the permission. Route checks and business-operation
 checks should use the same policy and verified scope.
 Consumers can define a narrow `Authorize(context.Context, rbac.Request) error`
-interface to inject either this authorizer or a test fake; the purchasing example
+interface to inject either this authorizer or a test fake; the purchasing
+example
 demonstrates that boundary.
 
 Roles, permissions and resource policies follow the boundaries discussed in
 [NIST's RBAC overview](https://csrc.nist.gov/Projects/Role-Based-Access-Control/faqs)
 and [Casbin's domain-scoped RBAC](https://casbin.org/docs/rbac-with-domains/).
-These are design references, not dependencies or a claim of standards compliance.
+These are design references, not dependencies or a claim of standards
+compliance.
 Session activation, separation-of-duty constraints, ABAC, automatic role
-administration, caching, SQL adapters and durable audits are outside this version.
+administration, caching, SQL adapters and durable audits are outside this
+version.
 
-Policies and static resolvers support concurrent reads without locks. All mutable
+Policies and static resolvers support concurrent reads without locks. All
+mutable
 constructor inputs and catalog/static-resolver outputs are copied. Custom
 resolvers must be concurrency-safe and return immutable or caller-owned slices.
 `Authorizer` has no assignment cache and resolves anew on each call. A custom
 resolver's caching/freshness semantics still apply. Revocation can race a write
-already authorized; use database transactions/rechecks for stronger requirements.
-Publish a replacement policy/authorizer through application-owned synchronization
-when reloading; do not race changes to an application pointer or input definition.
+already authorized; use database transactions/rechecks for stronger
+requirements.
+Publish a replacement policy/authorizer through application-owned
+synchronization
+when reloading; do not race changes to an application pointer or input
+definition.
 The compiler resolves inheritance iteratively, but precomputes effective grants;
 large dense role graphs cost proportional memory. Policies are trusted startup
 configuration, not unbounded request payloads.
@@ -233,8 +251,10 @@ configuration, not unbounded request payloads.
 ## Development and verification
 
 Tests use only Go and the standard library. The optional developer formatter is
-pinned in mise.toml; scripts accept that installed version or invoke it via mise.
-Review before `mise trust` and `mise install`. Python 3.11+ is needed by scripts.
+pinned in mise.toml; scripts accept that installed version or invoke it via
+mise.
+Review before `mise trust` and `mise install` . Python 3.11+ is needed by
+scripts.
 
 ```sh
 ./scripts/fmt.sh
@@ -250,13 +270,15 @@ go test -run '^$' -bench . -benchmem ./...
 The configurable formatter target is 80 columns (golines, gofumpt, gci and
 wsl_v5). Static checks never rewrite code. Files have a hard 1,000-line ceiling.
 Tests exercise exact decisions, hierarchy validation, input/output immutability,
-tenant/subject isolation, errors, cancellation, role changes, concurrent reads and
+tenant/subject isolation, errors, cancellation, role changes, concurrent reads
+and
 executable examples. Fuzzing compares compilation to an independent traversal
 oracle and checks that privileged assignments never cross tenant scopes. The
 mutation smoke alters eleven relevant guards/ownership properties in disposable
 copies; every mutant must be killed, with build failures and timeouts reported
 separately. It is a bounded smoke check, not comprehensive mutation coverage.
-Benchmarks report actual allocations/timing; no blanket performance claim is made.
+Benchmarks report actual allocations/timing; no blanket performance claim is
+made.
 
 Import `github.com/plutoframework/pluto-rbac` and install the initial release
 with `go get github.com/plutoframework/pluto-rbac@v0.1.0`. Releases before v1
@@ -269,8 +291,10 @@ go mod edit -replace=github.com/plutoframework/pluto-rbac=../pluto-rbac
 go mod tidy
 ```
 
-The [Pluto CLI](https://github.com/plutoframework/cli) and its generated apps, plus
-the [purchasing example](https://github.com/plutoframework/pluto-example), import
+The [Pluto CLI](https://github.com/plutoframework/cli) and its generated apps,
+plus
+the [purchasing example](https://github.com/plutoframework/pluto-example) ,
+import
 this library at an explicit pinned version. Their authenticators resolve trusted
 role assignments; each application compiles and injects its own role catalog.
 
@@ -279,18 +303,21 @@ role assignments; each application compiles and injects its own role catalog.
 `Requirement.WithResourcePolicy(policy)` returns a `ResourceRequirement` whose
 `Within` and `Use` methods require the current application-owned resource policy
 in addition to permission. The policy implements
-`AuthorizeResource(context.Context, Request, resourceID) error`; any error denies.
+`AuthorizeResource(context.Context, Request, resourceID) error` ; any error
+denies.
 The resource gate owns a private requirement instance: the original permission
 requirement cannot accept its execution and bypass resource policy. Nil policies
 are rejected. Resource predicates and transaction consistency remain application
 responsibilities; a nil result is only as correct as the injected policy.
 
-The optional module `github.com/plutoframework/pluto-rbac/identity` composes this
+The optional module `github.com/plutoframework/pluto-rbac/identity` composes
+this
 with concrete `pluto-auth.Identity`, a trusted issuing manager and a mandatory
 current membership verifier. `identitygate.New(manager, resourceRequirement,
 membership)` constructs the gate. `Gate.Within(ctx, identity, tenant, resource,
 callback)` supplies an opaque execution after identity, membership, permission
-and resource policy pass. `Gate.Use(ctx, execution, targetTenant, targetResource,
+and resource policy pass. `Gate.Use(ctx, execution, targetTenant,
+targetResource,
 callback)` repeats those checks before the guarded read/write. Target bindings
 must derive from the actual scoped record, query or evaluated transition.
 
@@ -300,7 +327,8 @@ callback scopes and zero values deny. Execution getters expose binding facts,
 not reusable authority. Credentials must come from the real session flow; worker
 or tool payload identities are untrusted. The integration module is a local
 candidate with explicit replacements, not a published pin. Auth and RBAC roots
-remain standard-library-only; generated-release adoption is a separate obligation.
+remain standard-library-only; generated-release adoption is a separate
+obligation.
 
 Run optional-module tests with `cd identity && GOWORK=off go test -race ./...`.
 `make fmt`, `make vet` and `make check` include the optional module. Local Auth

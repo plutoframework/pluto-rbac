@@ -8,7 +8,8 @@ import (
 	rbac "github.com/plutoframework/pluto-rbac"
 )
 
-// reviewOperation receives caller facts from trusted entry wiring, not a request
+// reviewOperation receives caller facts from trusted entry wiring, not a
+// request
 // body. Its mutation is private; the public entry has no permission parameter.
 type reviewOperation struct {
 	required *rbac.Requirement
@@ -65,9 +66,36 @@ func TestRequiredOperationConsumer(t *testing.T) {
 		want   error
 	}{
 		{verifiedCaller{"alice", rbac.Scope{TenantID: "north"}}, "north", nil},
-		{verifiedCaller{"bob", rbac.Scope{TenantID: "north"}}, "north", rbac.ErrForbidden},
-		{verifiedCaller{"alice", rbac.Scope{TenantID: "south"}}, "south", rbac.ErrForbidden},
-		{verifiedCaller{"alice", rbac.Scope{TenantID: "north"}}, "south", rbac.ErrForbidden},
+		{
+			verifiedCaller{
+				"bob",
+				rbac.Scope{
+					TenantID: "north",
+				},
+			},
+			"north",
+			rbac.ErrForbidden,
+		},
+		{
+			verifiedCaller{
+				"alice",
+				rbac.Scope{
+					TenantID: "south",
+				},
+			},
+			"south",
+			rbac.ErrForbidden,
+		},
+		{
+			verifiedCaller{
+				"alice",
+				rbac.Scope{
+					TenantID: "north",
+				},
+			},
+			"south",
+			rbac.ErrForbidden,
+		},
 		{verifiedCaller{}, "north", rbac.ErrUnauthenticated},
 	} {
 		if err := operation.execute(

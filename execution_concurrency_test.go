@@ -12,7 +12,9 @@ import (
 
 func TestExecutionWaitsForActiveUses(t *testing.T) {
 	resolver := rbac.RoleResolverFunc(
-		func(context.Context, string, rbac.Scope) ([]rbac.RoleID, error) { return []rbac.RoleID{admin}, nil },
+		func(context.Context, string, rbac.Scope) ([]rbac.RoleID, error) {
+			return []rbac.RoleID{admin}, nil
+		},
 	)
 
 	required, err := newAuthorizer(t, resolver, false).Require(manage)
@@ -27,22 +29,40 @@ func TestExecutionWaitsForActiveUses(t *testing.T) {
 
 	withinDone := make(chan error, 1)
 	go func() {
-		withinDone <- required.Within(context.Background(), "alice", rbac.Scope{}, "record:1", func(ctx context.Context, execution *rbac.Execution) error {
-			go func() {
-				useDone <- required.Use(ctx, execution, "alice", rbac.Scope{}, "record:1", func(context.Context) error {
-					close(started)
-					<-release
+		withinDone <- required.Within(
+			context.Background(),
+			"alice",
+			rbac.Scope{},
+			"record:1",
+			func(
+				ctx context.Context,
+				execution *rbac.Execution,
+			) error {
+				go func() {
+					useDone <- required.Use(
+						ctx,
+						execution,
+						"alice",
+						rbac.Scope{},
+						"record:1",
+						func(
+							context.Context,
+						) error {
+							close(started)
+							<-release
 
-					return nil
-				})
-			}()
+							return nil
+						},
+					)
+				}()
 
-			<-started
+				<-started
 
-			handed <- execution
+				handed <- execution
 
-			return nil
-		})
+				return nil
+			},
+		)
 	}()
 
 	execution := <-handed
@@ -92,7 +112,9 @@ func TestExecutionWaitsForActiveUses(t *testing.T) {
 
 func TestExecutionNestedUses(t *testing.T) {
 	resolver := rbac.RoleResolverFunc(
-		func(context.Context, string, rbac.Scope) ([]rbac.RoleID, error) { return []rbac.RoleID{admin}, nil },
+		func(context.Context, string, rbac.Scope) ([]rbac.RoleID, error) {
+			return []rbac.RoleID{admin}, nil
+		},
 	)
 
 	required, err := newAuthorizer(t, resolver, false).Require(manage)

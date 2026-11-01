@@ -5,9 +5,11 @@ import (
 	"reflect"
 )
 
-// ResourcePolicy evaluates application-owned resource authorization. A permission
+// ResourcePolicy evaluates application-owned resource authorization. A
+// permission
 // grant alone cannot prove ownership or business eligibility. Implementations
-// must load current scoped facts as needed; every nonnil error denies execution.
+// must load current scoped facts as needed; every nonnil error denies
+// execution.
 // Implementations must support concurrent calls when the gate is shared.
 type ResourcePolicy interface {
 	AuthorizeResource(context.Context, Request, string) error
@@ -29,7 +31,8 @@ func (f ResourcePolicyFunc) AuthorizeResource(
 
 // ResourceRequirement requires current permission and resource policy at entry
 // and every guarded use. Its private requirement instance prevents a separately
-// held permission-only Requirement from using its executions without the policy.
+// held permission-only Requirement from using its executions without the
+// policy.
 type ResourceRequirement struct {
 	requirement *Requirement
 	policy      ResourcePolicy
@@ -47,7 +50,11 @@ func (r *Requirement) WithResourcePolicy(
 	}
 
 	value := reflect.ValueOf(policy)
-	if (value.Kind() == reflect.Pointer || value.Kind() == reflect.Func || value.Kind() == reflect.Map || value.Kind() == reflect.Slice || value.Kind() == reflect.Chan) &&
+	if (value.Kind() == reflect.Pointer ||
+		value.Kind() == reflect.Func ||
+		value.Kind() == reflect.Map ||
+		value.Kind() == reflect.Slice ||
+		value.Kind() == reflect.Chan) &&
 		value.IsNil() {
 		return nil, ErrInvalidRequest
 	}

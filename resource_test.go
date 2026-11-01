@@ -10,7 +10,9 @@ import (
 
 func TestRequiredResourcePolicy(t *testing.T) {
 	resolver := rbac.RoleResolverFunc(
-		func(context.Context, string, rbac.Scope) ([]rbac.RoleID, error) { return []rbac.RoleID{admin}, nil },
+		func(context.Context, string, rbac.Scope) ([]rbac.RoleID, error) {
+			return []rbac.RoleID{admin}, nil
+		},
 	)
 
 	base, err := newAuthorizer(t, resolver, true).Require(manage)

@@ -21,21 +21,76 @@ func TestRequirementExecution(t *testing.T) {
 		cancel       bool
 		want         error
 	}{
-		{"allowed", "alice", "north", []rbac.RoleID{admin}, nil, false, callbackFailure},
+		{
+			"allowed",
+			"alice",
+			"north",
+			[]rbac.RoleID{
+				admin,
+			},
+			nil,
+			false,
+			callbackFailure,
+		},
 		{"other subject", "bob", "north", nil, nil, false, rbac.ErrForbidden},
 		{"other scope", "alice", "south", nil, nil, false, rbac.ErrForbidden},
 		{"missing scope", "alice", "", nil, nil, false, rbac.ErrInvalidRequest},
-		{"unknown role", "alice", "north", []rbac.RoleID{admin, "deleted"}, nil, false, rbac.ErrForbidden},
-		{"wrong permission grant", "alice", "north", []rbac.RoleID{reader}, nil, false, rbac.ErrForbidden},
-		{"resolver error", "alice", "north", []rbac.RoleID{admin}, failure, false, rbac.ErrResolveRoles},
-		{"cancellation", "alice", "north", []rbac.RoleID{admin}, nil, true, context.Canceled},
+		{
+			"unknown role",
+			"alice",
+			"north",
+			[]rbac.RoleID{
+				admin,
+				"deleted",
+			},
+			nil,
+			false,
+			rbac.ErrForbidden,
+		},
+		{
+			"wrong permission grant",
+			"alice",
+			"north",
+			[]rbac.RoleID{
+				reader,
+			},
+			nil,
+			false,
+			rbac.ErrForbidden,
+		},
+		{
+			"resolver error",
+			"alice",
+			"north",
+			[]rbac.RoleID{
+				admin,
+			},
+			failure,
+			false,
+			rbac.ErrResolveRoles,
+		},
+		{
+			"cancellation",
+			"alice",
+			"north",
+			[]rbac.RoleID{
+				admin,
+			},
+			nil,
+			true,
+			context.Canceled,
+		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 
 			resolver := rbac.RoleResolverFunc(
-				func(_ context.Context, subject string, scope rbac.Scope) ([]rbac.RoleID, error) {
+				func(
+					_ context.Context,
+					subject string,
+					scope rbac.Scope,
+				) ([]rbac.RoleID, error) {
 					if subject != test.subject ||
 						scope.TenantID != test.tenant {
 						t.Fatal("resolution key changed")
