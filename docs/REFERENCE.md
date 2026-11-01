@@ -145,6 +145,30 @@ errors. Missing identity returns `ErrUnauthenticated`, wrong/missing scope retur
 Nil or zero authorizers deny with `ErrUnconfigured`. Cancellation is checked
 before and after resolution, and preserves the context error.
 
+## Bind an operation permission (unreleased)
+
+`Authorizer.Require(permission)` constructs a `Requirement` with a fixed known
+permission. Its `Execute(ctx, subjectID, scope, callback)` method resolves roles
+again on every invocation and runs the callback only on allow. A nil callback
+returns `ErrInvalidRequest`; a nil/zero requirement returns `ErrUnconfigured`.
+Callback errors are returned unchanged. Existing `Authorize` callers remain
+compatible. This additive API is local unreleased work, absent from v0.1.0.
+
+Construct the requirement in composition and keep it private to the owning
+operation. Pass identity and scope derived by trusted application wiring, then
+perform resource checks and writes inside the callback. No authorization result
+or bearer proof is accepted or returned, and callers cannot change the bound
+permission on an execution. The requirement itself grants nothing without a
+fresh resolver call.
+
+This is a permission execution gate, not the complete required operation
+boundary: it cannot prove that a callback uses the same subject, scope or
+resource, or prevent direct calls to separately exposed writes. The application
+must restrict those mutation paths. It does not authenticate identity, validate
+resource ownership, establish transactions or make revocation atomic with a
+write. Resolver freshness still applies; cancellation may race callback entry.
+Generated required boundaries and restricted data ports remain future work.
+
 ## Keep resource policy explicit
 
 RBAC answers whether a subject holds a capability in a scope. It does not prove
