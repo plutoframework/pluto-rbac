@@ -9,6 +9,27 @@ import tempfile
 ROOT = Path(__file__).resolve().parent.parent
 MUTATIONS = [
     (
+        "execution lifetime retained",
+        "execution.go",
+        "s.active = false",
+        "s.active = true",
+        "TestExecutionBindingsAndLifetime",
+    ),
+    (
+        "execution scope binding ignored",
+        "execution.go",
+        "state.scope != scope",
+        "false",
+        "TestExecutionBindingsAndLifetime",
+    ),
+    (
+        "execution reauthorization denial ignored",
+        "execution.go",
+        "}); err != nil {",
+        "}); false && err != nil {",
+        "TestExecutionRevalidatesAndCancels",
+    ),
+    (
         "unknown assigned role accepted",
         "policy.go",
         "if _, exists := p.roles[role]; !exists {",

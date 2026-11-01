@@ -169,6 +169,36 @@ resource ownership, establish transactions or make revocation atomic with a
 write. Resolver freshness still applies; cancellation may race callback entry.
 Generated required boundaries and restricted data ports remain future work.
 
+### Restrict a write port with a live execution (unreleased)
+
+`Requirement.Within(ctx, subjectID, scope, resourceID, callback)` supplies an
+opaque `*Execution` to `func(context.Context, *Execution) error`. A restricted
+consumer-owned write port requires that execution in its method signature. Its
+adapter uses the same composition-injected requirement to call
+`Requirement.Use(ctx, execution, subjectID, scope, resourceID, callback)`, placing
+the actual write inside `func(context.Context) error`.
+
+`Use` validates the exact requirement instance, subject, scope and resource key,
+resolves roles again and invokes the write callback only on success. A nil/zero,
+wrong-binding or expired execution denies with `ErrForbidden`. The resource key
+must be nonempty trimmed text. Nil callbacks are invalid requests. Cancellation
+of the original execution cannot be erased by supplying another context.
+
+Copies of an execution share lifetime state. When the outer callback returns or
+panics, new uses are denied and `Within` waits for admitted use callbacks to
+finish before it returns or propagates the panic. Nested synchronous uses are
+supported. Callbacks must terminate; waiting for the enclosing `Within` to return
+from inside an active use would create an application dependency cycle.
+
+This combines permission validation and guarded invocation; a successful prior
+check is not accepted as write authority. It still cannot prove that callback
+SQL/resource predicates match the declared key, authenticate a supplied subject,
+or make revocation atomic with the write. Admitted callbacks may finish while
+the scope closes. Arbitrary independent SQL, exposed mutations, reflection/unsafe
+and source modifications are outside this contract. Generated operation and
+restricted port adoption plus independently enforced checks are required for a
+mandatory application boundary. This candidate API is not in published v0.1.0.
+
 ## Keep resource policy explicit
 
 RBAC answers whether a subject holds a capability in a scope. It does not prove
@@ -223,7 +253,7 @@ Tests exercise exact decisions, hierarchy validation, input/output immutability,
 tenant/subject isolation, errors, cancellation, role changes, concurrent reads and
 executable examples. Fuzzing compares compilation to an independent traversal
 oracle and checks that privileged assignments never cross tenant scopes. The
-mutation smoke alters six relevant guards/ownership properties in disposable
+mutation smoke alters nine relevant guards/ownership properties in disposable
 copies; every mutant must be killed, with build failures and timeouts reported
 separately. It is a bounded smoke check, not comprehensive mutation coverage.
 Benchmarks report actual allocations/timing; no blanket performance claim is made.
