@@ -253,7 +253,7 @@ Tests exercise exact decisions, hierarchy validation, input/output immutability,
 tenant/subject isolation, errors, cancellation, role changes, concurrent reads and
 executable examples. Fuzzing compares compilation to an independent traversal
 oracle and checks that privileged assignments never cross tenant scopes. The
-mutation smoke alters nine relevant guards/ownership properties in disposable
+mutation smoke alters eleven relevant guards/ownership properties in disposable
 copies; every mutant must be killed, with build failures and timeouts reported
 separately. It is a bounded smoke check, not comprehensive mutation coverage.
 Benchmarks report actual allocations/timing; no blanket performance claim is made.
@@ -273,3 +273,35 @@ The [Pluto CLI](https://github.com/plutoframework/cli) and its generated apps, p
 the [purchasing example](https://github.com/plutoframework/pluto-example), import
 this library at an explicit pinned version. Their authenticators resolve trusted
 role assignments; each application compiles and injects its own role catalog.
+
+## Required resource and identity gates (unreleased candidate)
+
+`Requirement.WithResourcePolicy(policy)` returns a `ResourceRequirement` whose
+`Within` and `Use` methods require the current application-owned resource policy
+in addition to permission. The policy implements
+`AuthorizeResource(context.Context, Request, resourceID) error`; any error denies.
+The resource gate owns a private requirement instance: the original permission
+requirement cannot accept its execution and bypass resource policy. Nil policies
+are rejected. Resource predicates and transaction consistency remain application
+responsibilities; a nil result is only as correct as the injected policy.
+
+The optional module `github.com/plutoframework/pluto-rbac/identity` composes this
+with concrete `pluto-auth.Identity`, a trusted issuing manager and a mandatory
+current membership verifier. `identitygate.New(manager, resourceRequirement,
+membership)` constructs the gate. `Gate.Within(ctx, identity, tenant, resource,
+callback)` supplies an opaque execution after identity, membership, permission
+and resource policy pass. `Gate.Use(ctx, execution, targetTenant, targetResource,
+callback)` repeats those checks before the guarded read/write. Target bindings
+must derive from the actual scoped record, query or evaluated transition.
+
+No public actor/tenant string constructor mints this execution. Foreign issuing
+managers, changed memberships, revoked sessions/roles, wrong bindings, expired
+callback scopes and zero values deny. Execution getters expose binding facts,
+not reusable authority. Credentials must come from the real session flow; worker
+or tool payload identities are untrusted. The integration module is a local
+candidate with explicit replacements, not a published pin. Auth and RBAC roots
+remain standard-library-only; generated-release adoption is a separate obligation.
+
+Run optional-module tests with `cd identity && GOWORK=off go test -race ./...`.
+`make fmt`, `make vet` and `make check` include the optional module. Local Auth
+and RBAC checkouts are required for its candidate replacements.

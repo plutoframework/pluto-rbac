@@ -9,6 +9,20 @@ import tempfile
 ROOT = Path(__file__).resolve().parent.parent
 MUTATIONS = [
     (
+        "resource policy bypass through permission gate",
+        "resource.go",
+        "private := &Requirement{authorizer: r.authorizer, permission: r.permission}",
+        "private := r",
+        "TestRequiredResourcePolicy",
+    ),
+    (
+        "resource policy denial ignored",
+        "resource.go",
+        "return f(ctx, request, resourceID)",
+        "return nil",
+        "TestRequiredResourcePolicy",
+    ),
+    (
         "execution lifetime retained",
         "execution.go",
         "s.active = false",
