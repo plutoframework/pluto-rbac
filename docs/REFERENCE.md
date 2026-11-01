@@ -277,7 +277,7 @@ tenant/subject isolation, errors, cancellation, role changes, concurrent reads
 and
 executable examples. Fuzzing compares compilation to an independent traversal
 oracle and checks that privileged assignments never cross tenant scopes. The
-mutation smoke alters twelve relevant guards/ownership properties in disposable
+mutation smoke alters thirteen relevant guards/ownership properties in disposable
 copies; every mutant must be killed, with build failures and timeouts reported
 separately. It is a bounded smoke check, not comprehensive mutation coverage.
 Benchmarks report actual allocations/timing; no blanket performance claim is
@@ -344,3 +344,8 @@ checkout is required.
 Active uses propagate cancellation from both the issuing scope and the supplied
 use context through revalidation and callbacks. Dependencies and callbacks must
 honor cancellation; already completed effects are not rolled back.
+
+The context supplied to `Gate.Within` remains a cancellation boundary even when
+the identity was issued under a different live context. `Gate.Use` propagates
+that operation cancellation before session and membership revalidation, as well
+as through permission/resource policy and the data callback.

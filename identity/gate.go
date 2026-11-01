@@ -42,6 +42,7 @@ type Execution struct {
 	gate       *Gate
 	identity   *auth.Identity
 	permission *rbac.Execution
+	context    context.Context
 	subject    string
 	tenant     string
 	resource   string
@@ -85,6 +86,8 @@ func (g *Gate) Within(
 		return rbac.ErrInvalidRequest
 	}
 
+	operationContext := ctx
+
 	return g.issuer.UseIdentity(
 		ctx,
 		identity,
@@ -112,6 +115,7 @@ func (g *Gate) Within(
 								gate:       g,
 								identity:   identity,
 								permission: permission,
+								context:    operationContext,
 								subject:    subject,
 								tenant:     tenant,
 								resource:   resource,
@@ -147,11 +151,27 @@ func (g *Gate) Use(
 	}
 
 	if execution == nil || execution.gate != g || execution.identity == nil ||
-		execution.permission == nil ||
+		execution.permission == nil || execution.context == nil ||
 		execution.tenant != tenant ||
 		execution.resource != resource {
 		return rbac.ErrForbidden
 	}
+
+	if ctx == nil {
+		return auth.ErrInvalidConfig
+	}
+
+	if err := execution.context.Err(); err != nil {
+		return err
+	}
+
+	// Membership runs before the permission gate, so propagate the operation's
+	// cancellation before identity or membership revalidation begins.
+	ctx, cancel := context.WithCancel(ctx)
+
+	stop := context.AfterFunc(execution.context, cancel)
+	defer cancel()
+	defer stop()
 
 	return g.issuer.UseIdentity(
 		ctx,

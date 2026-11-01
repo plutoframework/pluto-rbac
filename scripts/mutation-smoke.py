@@ -14,6 +14,14 @@ import tempfile
 ROOT = Path(__file__).resolve().parent.parent
 MUTATIONS = [
     (
+        "operation cancellation before membership ignored",
+        "identity/gate.go",
+        "context.AfterFunc(execution.context, cancel)",
+        "context.AfterFunc(context.Background(), cancel)",
+        "TestOperationCancellationReachesMembership",
+        "identity",
+    ),
+    (
         "original execution cancellation ignored",
         "execution.go",
         "context.AfterFunc(state.context, cancel)",
@@ -123,12 +131,15 @@ def execute(args, cwd, timeout):
 
 
 def main():
-    baseline = execute(["go", "test", "./..."], ROOT, 60)
-    if baseline.returncode:
-        raise SystemExit(baseline.stdout + baseline.stderr)
+    for module in (".", "identity"):
+        baseline = execute(["go", "test", "./..."], ROOT / module, 60)
+        if baseline.returncode:
+            raise SystemExit(baseline.stdout + baseline.stderr)
 
     counts = dict.fromkeys(["killed", "survived", "invalid", "timed-out"], 0)
-    for name, filename, before, after, test in MUTATIONS:
+    for mutation in MUTATIONS:
+        name, filename, before, after, test = mutation[:5]
+        module = mutation[5] if len(mutation) == 6 else "."
         with tempfile.TemporaryDirectory(
             prefix="pluto-rbac-mutation-"
         ) as temporary:
@@ -150,7 +161,7 @@ def main():
                 binary = Path(temporary) / "mutant.test"
                 built = execute(
                     ["go", "test", "-c", "-o", str(binary), "."],
-                    checkout,
+                    checkout / module,
                     60,
                 )
                 if built.returncode:
@@ -165,7 +176,7 @@ def main():
                             "-test.timeout",
                             "15s",
                         ],
-                        checkout,
+                        checkout / module,
                         20,
                     )
                     output = run.stdout + run.stderr
