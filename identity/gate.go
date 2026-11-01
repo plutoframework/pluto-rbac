@@ -56,8 +56,9 @@ func New(
 	}
 
 	value := reflect.ValueOf(membership)
-	if (value.Kind() == reflect.Pointer || value.Kind() == reflect.Func) &&
-		value.IsNil() {
+	if (value.Kind() == reflect.Pointer || value.Kind() == reflect.Func ||
+		value.Kind() == reflect.Map || value.Kind() == reflect.Slice ||
+		value.Kind() == reflect.Chan) && value.IsNil() {
 		return nil, rbac.ErrUnconfigured
 	}
 

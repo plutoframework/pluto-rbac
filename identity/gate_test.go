@@ -21,6 +21,7 @@ type fixture struct {
 	resource       bool
 	roles          []rbac.RoleID
 	beforeResource func()
+	requirement    *rbac.ResourceRequirement
 }
 
 func newManager(t *testing.T) *auth.Manager {
@@ -118,6 +119,8 @@ func setup(t *testing.T) *fixture {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	f.requirement = resource
 
 	f.gate, err = identitygate.New(
 		f.manager,
@@ -373,6 +376,80 @@ func TestOriginalCancellationDuringResourcePolicy(t *testing.T) {
 
 		if !errors.Is(err, context.Canceled) {
 			t.Fatal(err)
+		}
+	}
+}
+
+type mapMembership map[string]bool
+
+func (mapMembership) VerifyMembership(
+	context.Context,
+	string,
+	string,
+) error {
+	return nil
+}
+
+type sliceMembership []string
+
+func (sliceMembership) VerifyMembership(
+	context.Context,
+	string,
+	string,
+) error {
+	return nil
+}
+
+type channelMembership chan struct{}
+
+func (channelMembership) VerifyMembership(
+	context.Context,
+	string,
+	string,
+) error {
+	return nil
+}
+
+func TestNilMembershipDependenciesDeny(t *testing.T) {
+	f := setup(t)
+	for _, membership := range []identitygate.MembershipVerifier{
+		nil, mapMembership(nil), sliceMembership(nil), channelMembership(nil), identitygate.MembershipVerifierFunc(nil),
+	} {
+		if gate, err := identitygate.New(
+			f.manager,
+			f.requirement,
+			membership,
+		); !errors.Is(err, rbac.ErrUnconfigured) ||
+			gate != nil {
+			t.Fatalf("nil membership accepted: gate=%v error=%v", gate, err)
+		}
+	}
+
+	for _, membership := range []identitygate.MembershipVerifier{
+		mapMembership{}, sliceMembership{}, make(channelMembership),
+	} {
+		gate, err := identitygate.New(f.manager, f.requirement, membership)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		calls := 0
+
+		err = f.manager.WithIdentity(
+			t.Context(),
+			f.token,
+			func(ctx context.Context, identity *auth.Identity) error {
+				return gate.Within(
+					ctx,
+					identity,
+					"north",
+					"one",
+					func(context.Context, *identitygate.Execution) error { calls++; return nil },
+				)
+			},
+		)
+		if err != nil || calls != 1 {
+			t.Fatalf("valid membership rejected: calls=%d error=%v", calls, err)
 		}
 	}
 }
