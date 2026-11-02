@@ -18,4 +18,6 @@ vet:
 check: vet
 
 test:
-	go test $(TEST_ARGS) ./...
+	@for module in . identity; do \
+		(cd "$$module" && GOWORK=off go test $(TEST_ARGS) ./...) || exit $$?; \
+	done

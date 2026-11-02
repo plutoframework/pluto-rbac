@@ -1,25 +1,19 @@
 #!/usr/bin/env bash
-# One pinned version for mise tasks, direct scripts, and CI.
 set -euo pipefail
-cd "$(dirname "$0")/.."
-
-version=$(python3 - <<'PYTHON'
+task_root=$(cd "$(dirname "$0")/.." && pwd)
+version=$(python3 - "$task_root/mise.toml" <<'PYTHON'
+import sys
 import tomllib
 from pathlib import Path
-print(tomllib.loads(Path('mise.toml').read_text())['tools']['golangci-lint'])
+
+print(tomllib.loads(Path(sys.argv[1]).read_text())["tools"]["golangci-lint"])
 PYTHON
 )
-
 if command -v golangci-lint >/dev/null 2>&1; then
   installed=$(golangci-lint version --short)
   if [[ "$installed" == "$version" ]]; then
-    exec golangci-lint "$@"
+    exec golangci-lint "$@" --config "$task_root/.golangci.yml"
   fi
 fi
-
-if command -v mise >/dev/null 2>&1; then
-  exec mise exec "golangci-lint@$version" -- golangci-lint "$@"
-fi
-
-echo "Install golangci-lint $version or run 'mise install' in this project." >&2
-exit 1
+exec mise exec "golangci-lint@$version" -- golangci-lint "$@" \
+  --config "$task_root/.golangci.yml"
