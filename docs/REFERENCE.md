@@ -333,6 +333,16 @@ callback scopes and zero values deny. Execution getters expose binding facts,
 not reusable authority. Credentials must come from the real session flow; worker
 or tool payload identities are untrusted. The integration module pins candidate
 Auth source, not a published release.
+
+Test-only helper `identity/identitytest`: `New(Options{Policy, Permission,
+Members, Resource})` builds a real gate over in-memory sessions and membership;
+`(*Harness).Within(ctx, subject, tenant, resource, run)` starts a session and
+mints an execution through `Gate.Within`; `(*Harness).Gate()` returns the gate
+for `Use`. Production code must not import it: membership is process-local and
+a nil `Resource` policy admits every key. There is no forging API; denials skip
+the callback and executions die when it returns. No `UseBound` is provided:
+restating tenant/resource at `Use` forces target bindings to come from the
+scoped record, which a bound shortcut would remove.
 Auth and RBAC roots remain standard-library-only; generated-release adoption
 is a separate obligation.
 
